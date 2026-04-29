@@ -43,6 +43,12 @@ public class ParallelResearch {
     };
 
     private static final int[] THREADS = {1, 2, 4, 8};
+    private static final String[] IMAGES = {
+            "256.png",
+            "512.jpg",
+            "1024.jpg",
+            "2048.jpg"
+    };
     private static final ParallelStrategy[] STRATEGIES = {
             ParallelStrategy.PIXELS,
             ParallelStrategy.ROWS,
@@ -113,6 +119,13 @@ public class ParallelResearch {
         drawSpeedupByThreads(results, OUTPUT_DIR.resolve("parallel_speedup_by_threads.png"));
         drawStrategyComparison(results, OUTPUT_DIR.resolve("parallel_strategy_comparison.png"));
         drawThroughputByImage(results, OUTPUT_DIR.resolve("parallel_throughput_by_image.png"));
+        for (String image : IMAGES) {
+            String size = imageSizeLabel(image);
+            drawAllFiltersTimeComparison(results, image, OUTPUT_DIR.resolve("parallel_all_filters_time_" + size + ".png"));
+            drawAllFiltersSpeedupComparison(results, image, OUTPUT_DIR.resolve("parallel_all_filters_speedup_" + size + ".png"));
+            drawAllFiltersThreadTimeComparison(results, image, OUTPUT_DIR.resolve("parallel_threads_time_" + size + ".png"));
+            drawAllFiltersThreadSpeedupComparison(results, image, OUTPUT_DIR.resolve("parallel_threads_speedup_" + size + ".png"));
+        }
     }
 
     private static List<Result> readResults(Path path) throws IOException {
@@ -349,6 +362,112 @@ public class ParallelResearch {
         );
     }
 
+    private static void drawAllFiltersTimeComparison(List<Result> results, String image, Path output) throws IOException {
+        List<GroupedSeries> series = new ArrayList<>();
+        series.add(new GroupedSeries("Послед.", valuesForFilters(results, image, "sequential", 1, Metric.TIME)));
+        for (ParallelStrategy strategy : STRATEGIES) {
+            String name = strategy.name().toLowerCase(Locale.ROOT);
+            series.add(new GroupedSeries(displayStrategy(name), valuesForFilters(results, image, name, 8, Metric.TIME)));
+        }
+        drawGroupedBarChart(
+                output,
+                "Время всех фильтров на " + imageSizeLabel(image) + ", 8 потоков",
+                "Фильтр",
+                "Время, мс",
+                List.of(FILTERS),
+                series
+        );
+    }
+
+    private static void drawAllFiltersSpeedupComparison(List<Result> results, String image, Path output) throws IOException {
+        List<GroupedSeries> series = new ArrayList<>();
+        for (ParallelStrategy strategy : STRATEGIES) {
+            String name = strategy.name().toLowerCase(Locale.ROOT);
+            series.add(new GroupedSeries(displayStrategy(name), valuesForFilters(results, image, name, 8, Metric.SPEEDUP)));
+        }
+        drawGroupedBarChart(
+                output,
+                "Ускорение всех фильтров на " + imageSizeLabel(image) + ", 8 потоков",
+                "Фильтр",
+                "Ускорение",
+                List.of(FILTERS),
+                series
+        );
+    }
+
+    private static List<Double> valuesForFilters(List<Result> results, String image, String strategy, int threads, Metric metric) {
+        List<Double> values = new ArrayList<>();
+        for (String filter : FILTERS) {
+            Result result = results.stream()
+                    .filter(r -> r.image.equals(image))
+                    .filter(r -> r.filter.equals(filter))
+                    .filter(r -> r.strategy.equals(strategy))
+                    .filter(r -> r.threads == threads)
+                    .findFirst()
+                    .orElseThrow();
+            values.add(metric == Metric.TIME ? result.avgMs : result.speedup);
+        }
+        return values;
+    }
+
+    private static void drawAllFiltersThreadTimeComparison(List<Result> results, String image, Path output) throws IOException {
+        List<GroupedSeries> series = new ArrayList<>();
+        series.add(new GroupedSeries("Послед.", valuesForFilters(results, image, "sequential", 1, Metric.TIME)));
+        for (int threads : THREADS) {
+            series.add(new GroupedSeries(threadLabel(threads), bestValuesForThreads(results, image, threads, Metric.TIME)));
+        }
+        drawGroupedBarChart(
+                output,
+                "Время по количеству потоков на " + imageSizeLabel(image),
+                "Фильтр",
+                "Время, мс",
+                List.of(FILTERS),
+                series
+        );
+    }
+
+    private static void drawAllFiltersThreadSpeedupComparison(List<Result> results, String image, Path output) throws IOException {
+        List<GroupedSeries> series = new ArrayList<>();
+        for (int threads : THREADS) {
+            series.add(new GroupedSeries(threadLabel(threads), bestValuesForThreads(results, image, threads, Metric.SPEEDUP)));
+        }
+        drawGroupedBarChart(
+                output,
+                "Ускорение по количеству потоков на " + imageSizeLabel(image),
+                "Фильтр",
+                "Ускорение",
+                List.of(FILTERS),
+                series
+        );
+    }
+
+    private static List<Double> bestValuesForThreads(List<Result> results, String image, int threads, Metric metric) {
+        List<Double> values = new ArrayList<>();
+        for (String filter : FILTERS) {
+            Result result = results.stream()
+                    .filter(r -> r.image.equals(image))
+                    .filter(r -> r.filter.equals(filter))
+                    .filter(r -> !r.strategy.equals("sequential"))
+                    .filter(r -> r.threads == threads)
+                    .min(Comparator.comparingDouble(r -> r.avgMs))
+                    .orElseThrow();
+            values.add(metric == Metric.TIME ? result.avgMs : result.speedup);
+        }
+        return values;
+    }
+
+    private static String imageSizeLabel(String image) {
+        return image.replace(".png", "").replace(".jpg", "") + "x" + image.replace(".png", "").replace(".jpg", "");
+    }
+
+    private static String threadLabel(int threads) {
+        return switch (threads) {
+            case 1 -> "1 поток";
+            case 2, 4 -> threads + " потока";
+            default -> threads + " потоков";
+        };
+    }
+
     private static List<Point> pointsFor(List<Result> results, String image, String filter, String strategy, Metric metric) {
         List<Point> points = new ArrayList<>();
         for (int threads : THREADS) {
@@ -475,6 +594,68 @@ public class ParallelResearch {
         ImageIO.write(image, "png", output.toFile());
     }
 
+    private static void drawGroupedBarChart(
+            Path output,
+            String title,
+            String xLabel,
+            String yLabel,
+            List<String> groups,
+            List<GroupedSeries> series
+    ) throws IOException {
+        int width = 1800;
+        int height = 950;
+        int left = 110;
+        int right = 390;
+        int top = 100;
+        int bottom = 170;
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = image.createGraphics();
+        prepare(g);
+        paintBackground(g, width, height);
+
+        double maxY = series.stream()
+                .flatMap(s -> s.values.stream())
+                .mapToDouble(v -> v)
+                .max()
+                .orElse(1.0) * 1.2;
+        drawAxes(g, title, xLabel, yLabel, width, height, left, right, top, bottom, maxY, new int[]{});
+
+        int plotLeft = left;
+        int plotRight = width - right;
+        int plotBottom = height - bottom;
+        int plotTop = top;
+        int groupCount = groups.size();
+        int seriesCount = series.size();
+        int groupGap = 42;
+        int groupWidth = (plotRight - plotLeft - groupGap * (groupCount + 1)) / groupCount;
+        int barGap = 5;
+        int barWidth = Math.max(8, (groupWidth - barGap * (seriesCount - 1)) / seriesCount);
+        Color[] colors = chartColors();
+
+        g.setFont(new Font("SansSerif", Font.PLAIN, 22));
+        for (int groupIndex = 0; groupIndex < groupCount; groupIndex++) {
+            int groupX = plotLeft + groupGap + groupIndex * (groupWidth + groupGap);
+            for (int seriesIndex = 0; seriesIndex < seriesCount; seriesIndex++) {
+                double value = series.get(seriesIndex).values.get(groupIndex);
+                int x = groupX + seriesIndex * (barWidth + barGap);
+                int y = scaleY(value, 0, maxY, plotBottom, plotTop);
+                int barHeight = plotBottom - y;
+                g.setColor(colors[seriesIndex % colors.length]);
+                g.fillRoundRect(x, y, barWidth, barHeight, 8, 8);
+            }
+
+            g.setColor(new Color(35, 39, 47));
+            drawCentered(g, groups.get(groupIndex), groupX + groupWidth / 2, plotBottom + 38);
+        }
+
+        for (int i = 0; i < series.size(); i++) {
+            drawLegendItem(g, series.get(i).name, colors[i % colors.length], width - right + 20, top + i * 42);
+        }
+
+        g.dispose();
+        ImageIO.write(image, "png", output.toFile());
+    }
+
     private static void drawAxes(
             Graphics2D g,
             String title,
@@ -591,6 +772,9 @@ public class ParallelResearch {
     }
 
     private record Series(String name, List<Point> points) {
+    }
+
+    private record GroupedSeries(String name, List<Double> values) {
     }
 
     private static class Result {
