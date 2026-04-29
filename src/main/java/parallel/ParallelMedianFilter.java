@@ -17,7 +17,7 @@ public class ParallelMedianFilter {
         ThreadLocal<int[]> windows = ThreadLocal.withInitial(() -> new int[windowSize * windowSize]);
 
         ParallelImageProcessor.process(width, height, strategy, threads, (x, y) -> {
-            // У каждого потока своё окно, поэтому потоки не перетирают данные друг друга.
+            // Каждому потоку даю своё окно, чтобы потоки не перетирали данные друг друга.
             int[] window = windows.get();
             int index = y * width + x;
             dst[index] = (byte) MedianFilter.computePixel(src, x, y, radius, window);

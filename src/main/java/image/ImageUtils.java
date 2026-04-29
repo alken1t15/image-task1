@@ -23,12 +23,12 @@ public class ImageUtils {
         );
 
         // Перерисовываю исходное изображение в gray.
-        // За счет TYPE_BYTE_GRAY оно автоматически переводится в оттенки серого
+        // За счет TYPE_BYTE_GRAY Java автоматически переводит его в оттенки серого.
         Graphics2D g = gray.createGraphics();
         try {
             g.drawImage(input, 0, 0, null);
         } finally {
-            // После работы освобождаю графический контекст
+            // После работы освобождаю графический контекст.
             g.dispose();
         }
 

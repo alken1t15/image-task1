@@ -21,8 +21,8 @@ public class ParallelImageProcessor {
     }
 
     private static void processPixels(int width, int height, int workerCount, PixelWriter writer) {
-        // Для попиксельного режима каждый поток забирает следующий пиксель
-        // через общий счетчик. Так получается динамическое распределение работы.
+        // В попиксельном режиме каждый поток забирает следующий пиксель
+        // через общий счетчик. Так я получаю динамическое распределение работы.
         AtomicInteger nextPixel = new AtomicInteger(0);
         int totalPixels = width * height;
 
@@ -54,7 +54,7 @@ public class ParallelImageProcessor {
 
     private static void processColumns(int width, int height, int workerCount, PixelWriter writer) {
         runWorkers(workerCount, workerIndex -> {
-            // В этом режиме поток получает свой диапазон столбцов.
+            // В этом режиме каждому потоку отдаю свой диапазон столбцов.
             int fromX = workerIndex * width / workerCount;
             int toX = (workerIndex + 1) * width / workerCount;
 

@@ -45,7 +45,7 @@ public class ParallelFilterTest {
         GrayImage expected = Convolution.apply(input, kernel);
 
         for (ParallelStrategy strategy : ParallelStrategy.values()) {
-            // Потоков специально больше, чем строк или столбцов,
+            // Специально беру потоков больше, чем строк или столбцов,
             // чтобы проверить маленькие изображения и крайние случаи разбиения.
             GrayImage actual = ParallelConvolution.apply(input, kernel, strategy, 16);
             assertImagesEqual(expected, actual);

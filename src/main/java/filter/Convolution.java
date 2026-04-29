@@ -11,7 +11,7 @@ public class Convolution {
         byte[] dst = new byte[src.data.length];
 
         // Нахожу центр ядра.
-        // Например, для ядра 3x3 центр будет (1, 1), для 5x5 -> (2, 2)
+        // Например, для ядра 3x3 беру центр (1, 1), для 5x5 -> (2, 2)
         int kernelCenterX = kernel.width / 2;
         int kernelCenterY = kernel.height / 2;
 
@@ -42,10 +42,9 @@ public class Convolution {
         double sum = 0.0;
 
         for (int ky = 0; ky < kernel.height; ky++) {
-            /* Вычисляю координату пикселя в исходном изображении.
-             mod использую для wrap-around обработки границ,
-             если вышли за край, "заворачиваемся" на другую сторону изображения.
-             */
+            // Вычисляю координату пикселя в исходном изображении.
+            // mod использую для wrap-around обработки границ:
+            // если выхожу за край, "заворачиваюсь" на другую сторону изображения.
             int sy = mod(y + ky - kernelCenterY, height);
             int srcRowOffset = sy * width;
             int kernelRowOffset = ky * kernel.width;
@@ -69,12 +68,12 @@ public class Convolution {
         return clamp(value, 0, 255);
     }
 
-    // Этот метод нужен, чтобы зажать число в допустимый диапазон.
+    // Этим методом зажимаю число в допустимый диапазон.
     static int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
     }
 
-    // Этот метод нужен для корректной обработки выхода за границы изображения.
+    // Этим методом корректно обрабатываю выход за границы изображения.
     static int mod(int value, int size) {
         return ((value % size) + size) % size;
     }

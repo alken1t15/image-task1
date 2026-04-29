@@ -9,8 +9,8 @@ public class ParallelConvolution {
         int width = src.width;
         int height = src.height;
 
-        // Каждый поток пишет только в свои пиксели, поэтому отдельная синхронизация
-        // для массива dst здесь не нужна.
+        // Каждый поток пишет только в свои пиксели, поэтому отдельную синхронизацию
+        // для массива dst здесь не добавляю.
         byte[] dst = new byte[src.data.length];
 
         int kernelCenterX = kernel.width / 2;

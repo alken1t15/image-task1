@@ -25,7 +25,7 @@ public class Main {
 
         switch (mode) {
             case "apply" -> {
-                // apply <input> <output> <kernelName>
+                // Ожидаю: apply <input> <output> <kernelName>
                 if (args.length != 4) {
                     printUsage();
                     return;
@@ -33,7 +33,7 @@ public class Main {
                 apply(args[1], args[2], args[3]);
             }
             case "benchmark" -> {
-                // benchmark <input> <kernelName> <iterations>
+                // Ожидаю: benchmark <input> <kernelName> <iterations>
                 if (args.length != 4) {
                     printUsage();
                     return;
@@ -42,7 +42,7 @@ public class Main {
                 benchmark(args[1], args[2], iterations);
             }
             case "apply-parallel" -> {
-                // apply-parallel <input> <output> <filterName> <strategy> <threads>
+                // Ожидаю: apply-parallel <input> <output> <filterName> <strategy> <threads>
                 if (args.length != 6) {
                     printUsage();
                     return;
@@ -52,7 +52,7 @@ public class Main {
                 applyParallel(args[1], args[2], args[3], strategy, threads);
             }
             case "benchmark-parallel" -> {
-                // benchmark-parallel <input> <filterName> <strategy> <threads> <iterations>
+                // Ожидаю: benchmark-parallel <input> <filterName> <strategy> <threads> <iterations>
                 if (args.length != 6) {
                     printUsage();
                     return;
@@ -128,7 +128,7 @@ public class Main {
         // Здесь буду хранить суммарное время всех запусков
         long total = 0;
 
-        // Контрольная сумма, чтобы результат вычислений точно использовался
+        // Держу контрольную сумму, чтобы результат вычислений точно использовался
         int checksum = 0;
 
         for (int i = 0; i < iterations; i++) {
@@ -160,10 +160,10 @@ public class Main {
         double avgNs = (double) total / iterations;
         double avgMs = avgNs / 1_000_000.0;
 
-        // Размер изображения в мегапикселях
+        // Считаю размер изображения в мегапикселях
         double mpix = (double) input.width * input.height / 1_000_000.0;
 
-        // Средняя пропускная способность
+        // Считаю среднюю пропускную способность
         double mpixPerSec = mpix / (avgNs / 1_000_000_000.0);
 
         // Печатаю итоговую статистику
@@ -215,10 +215,9 @@ public class Main {
     private static GrayImage applyFilter(GrayImage input, String filterName) {
         String name = filterName.toLowerCase(Locale.ROOT);
 
-        /* Если имя фильтра начинается с "median", значит это median filter.
-        // У него нет обычного ядра коэффициентов, поэтому размер окна
-        (например 3, 5 или 7) разбираю из названия фильтра отдельно
-         */
+        // Если имя фильтра начинается с "median", считаю его медианным фильтром.
+        // Для него не использую обычное ядро коэффициентов, поэтому размер окна
+        // (например 3, 5 или 7) разбираю из названия фильтра отдельно.
         if (name.startsWith("median")) {
             int windowSize = parseMedianWindowSize(name);
             return MedianFilter.apply(input, windowSize);
@@ -239,8 +238,8 @@ public class Main {
     ) {
         String name = filterName.toLowerCase(Locale.ROOT);
 
-        // Median filter тоже можно распараллелить, потому что каждый пиксель
-        // результата считается независимо от остальных пикселей результата.
+        // Median filter тоже распараллеливаю: каждый пиксель результата
+        // считаю независимо от остальных пикселей результата.
         if (name.startsWith("median")) {
             int windowSize = parseMedianWindowSize(name);
             return ParallelMedianFilter.apply(input, windowSize, strategy, threads);
