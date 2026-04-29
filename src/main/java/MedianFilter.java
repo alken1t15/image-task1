@@ -25,26 +25,9 @@ public class MedianFilter {
             int dstRowOffset = y * width;
 
             for (int x = 0; x < width; x++) {
-                // idx показывает, куда записывать очередное значение в окно
-                int idx = 0;
-
-                // Собираю все пиксели из окна вокруг текущей точки (x, y)
-                for (int dy = -radius; dy <= radius; dy++) {
-                    // Если выходим за границы, прижимаю координату к ближайшей границе изображения
-                    int sy = clamp(y + dy, 0, height - 1);
-
-                    for (int dx = -radius; dx <= radius; dx++) {
-                        int sx = clamp(x + dx, 0, width - 1);
-                        // Беру значение пикселя из исходного изображения
-                        // и добавляю его в массив окна
-                        window[idx++] = src.data[sy * width + sx] & 0xFF;
-                    }
-                }
-
-                java.util.Arrays.sort(window);
-
-                // После сортировки центральный элемент и есть медиана
-                int median = window[window.length / 2];
+                // Считаю медиану через общий метод, чтобы параллельная версия
+                // не дублировала правила обработки границ.
+                int median = computePixel(src, x, y, radius, window);
 
                 // Записываю медиану в результирующее изображение
                 dst[dstRowOffset + x] = (byte) median;
@@ -52,6 +35,28 @@ public class MedianFilter {
         }
 
         return new GrayImage(width, height, dst);
+    }
+
+    static int computePixel(GrayImage src, int x, int y, int radius, int[] window) {
+        int idx = 0;
+
+        // Собираю все пиксели из окна вокруг текущей точки (x, y).
+        for (int dy = -radius; dy <= radius; dy++) {
+            // Если выходим за границы, прижимаю координату к ближайшей границе изображения.
+            int sy = clamp(y + dy, 0, src.height - 1);
+
+            for (int dx = -radius; dx <= radius; dx++) {
+                int sx = clamp(x + dx, 0, src.width - 1);
+
+                // Беру значение пикселя из исходного изображения и добавляю его в окно.
+                window[idx++] = src.data[sy * src.width + sx] & 0xFF;
+            }
+        }
+
+        java.util.Arrays.sort(window);
+
+        // После сортировки центральный элемент и есть медиана.
+        return window[window.length / 2];
     }
 
     static int clamp(int value, int min, int max) {

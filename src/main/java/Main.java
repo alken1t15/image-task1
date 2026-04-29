@@ -29,6 +29,27 @@ public class Main {
                 int iterations = Integer.parseInt(args[3]);
                 benchmark(args[1], args[2], iterations);
             }
+            case "apply-parallel" -> {
+                // apply-parallel <input> <output> <filterName> <strategy> <threads>
+                if (args.length != 6) {
+                    printUsage();
+                    return;
+                }
+                ParallelStrategy strategy = ParallelStrategy.parse(args[4]);
+                int threads = Integer.parseInt(args[5]);
+                applyParallel(args[1], args[2], args[3], strategy, threads);
+            }
+            case "benchmark-parallel" -> {
+                // benchmark-parallel <input> <filterName> <strategy> <threads> <iterations>
+                if (args.length != 6) {
+                    printUsage();
+                    return;
+                }
+                ParallelStrategy strategy = ParallelStrategy.parse(args[3]);
+                int threads = Integer.parseInt(args[4]);
+                int iterations = Integer.parseInt(args[5]);
+                benchmarkParallel(args[1], args[2], strategy, threads, iterations);
+            }
             default -> printUsage();
         }
     }
@@ -60,6 +81,32 @@ public class Main {
         System.out.printf(Locale.US,
                 "Done. Filter=%s, size=%dx%d, time=%.3f ms, throughput=%.3f MPix/s%n",
                 filterName, input.width, input.height, ms, mpixPerSec);
+    }
+
+    private static void applyParallel(
+            String inputPath,
+            String outputPath,
+            String filterName,
+            ParallelStrategy strategy,
+            int threads
+    ) throws IOException {
+        // Загружаю входное изображение так же, как в первом задании.
+        GrayImage input = ImageUtils.loadGray(inputPath);
+
+        // Засекаю только время фильтрации, без чтения и записи файла.
+        long start = System.nanoTime();
+        GrayImage output = applyFilterParallel(input, filterName, strategy, threads);
+        long elapsed = System.nanoTime() - start;
+
+        ImageUtils.saveGray(output, outputPath);
+
+        double ms = elapsed / 1_000_000.0;
+        double mpix = (double) input.width * input.height / 1_000_000.0;
+        double mpixPerSec = mpix / (elapsed / 1_000_000_000.0);
+
+        System.out.printf(Locale.US,
+                "Done. Filter=%s, strategy=%s, threads=%d, size=%dx%d, time=%.3f ms, throughput=%.3f MPix/s%n",
+                filterName, strategy.name().toLowerCase(Locale.ROOT), threads, input.width, input.height, ms, mpixPerSec);
     }
 
     private static void benchmark(String inputPath, String filterName, int iterations) throws IOException {
@@ -113,6 +160,46 @@ public class Main {
                 filterName, input.width, input.height, iterations, avgMs, mpixPerSec, checksum);
     }
 
+    private static void benchmarkParallel(
+            String inputPath,
+            String filterName,
+            ParallelStrategy strategy,
+            int threads,
+            int iterations
+    ) throws IOException {
+        // Загружаю изображение один раз, чтобы измерять именно фильтрацию.
+        GrayImage input = ImageUtils.loadGray(inputPath);
+
+        long total = 0;
+        int checksum = 0;
+
+        for (int i = 0; i < iterations; i++) {
+            long start = System.nanoTime();
+
+            GrayImage out = applyFilterParallel(input, filterName, strategy, threads);
+
+            long elapsed = System.nanoTime() - start;
+            total += elapsed;
+            checksum += out.data[i % out.data.length] & 0xFF;
+
+            double ms = elapsed / 1_000_000.0;
+
+            System.out.printf(Locale.US,
+                    "Run %d: %.3f ms%n",
+                    i + 1, ms);
+        }
+
+        double avgNs = (double) total / iterations;
+        double avgMs = avgNs / 1_000_000.0;
+        double mpix = (double) input.width * input.height / 1_000_000.0;
+        double mpixPerSec = mpix / (avgNs / 1_000_000_000.0);
+
+        System.out.printf(Locale.US,
+                "Average: filter=%s, strategy=%s, threads=%d, image=%dx%d, iterations=%d, avg=%.3f ms, throughput=%.3f MPix/s, checksum=%d%n",
+                filterName, strategy.name().toLowerCase(Locale.ROOT), threads,
+                input.width, input.height, iterations, avgMs, mpixPerSec, checksum);
+    }
+
     private static GrayImage applyFilter(GrayImage input, String filterName) {
         String name = filterName.toLowerCase(Locale.ROOT);
 
@@ -132,6 +219,25 @@ public class Main {
         return Convolution.apply(input, kernel);
     }
 
+    private static GrayImage applyFilterParallel(
+            GrayImage input,
+            String filterName,
+            ParallelStrategy strategy,
+            int threads
+    ) {
+        String name = filterName.toLowerCase(Locale.ROOT);
+
+        // Median filter тоже можно распараллелить, потому что каждый пиксель
+        // результата считается независимо от остальных пикселей результата.
+        if (name.startsWith("median")) {
+            int windowSize = parseMedianWindowSize(name);
+            return ParallelMedianFilter.apply(input, windowSize, strategy, threads);
+        }
+
+        Kernel kernel = Kernels.byName(name);
+        return ParallelConvolution.apply(input, kernel, strategy, threads);
+    }
+
     private static int parseMedianWindowSize(String name) {
         // По названию фильтра определяю размер окна для median filter
         return switch (name) {
@@ -149,6 +255,14 @@ public class Main {
             Usage:
               java Main apply <input> <output> <filterName>
               java Main benchmark <input> <filterName> <iterations>
+              java Main apply-parallel <input> <output> <filterName> <strategy> <threads>
+              java Main benchmark-parallel <input> <filterName> <strategy> <threads> <iterations>
+
+            Parallel strategies:
+              pixels
+              rows
+              columns
+              grid
 
             Filters:
               identity
