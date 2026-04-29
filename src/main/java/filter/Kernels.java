@@ -1,7 +1,9 @@
+package filter;
+
 import java.util.Locale;
 
 public class Kernels {
-    static Kernel byName(String name) {
+    public static Kernel byName(String name) {
         return switch (name.toLowerCase(Locale.ROOT)) {
 
             // Нейтральный фильтр: оставляет изображение без изменений

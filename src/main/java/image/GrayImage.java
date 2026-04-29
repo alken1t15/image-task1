@@ -1,9 +1,11 @@
-public class GrayImage {
-    final int width;
-    final int height;
-    final byte[] data;
+package image;
 
-    GrayImage(int width, int height, byte[] data) {
+public class GrayImage {
+    public final int width;
+    public final int height;
+    public final byte[] data;
+
+    public GrayImage(int width, int height, byte[] data) {
         if (width <= 0 || height <= 0) {
             throw new IllegalArgumentException("Image size must be positive");
         }

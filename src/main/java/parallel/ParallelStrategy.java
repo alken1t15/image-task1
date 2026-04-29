@@ -1,3 +1,5 @@
+package parallel;
+
 import java.util.Locale;
 
 public enum ParallelStrategy {
@@ -6,7 +8,7 @@ public enum ParallelStrategy {
     COLUMNS,
     GRID;
 
-    static ParallelStrategy parse(String value) {
+    public static ParallelStrategy parse(String value) {
         try {
             // Привожу имя стратегии к одному виду, чтобы в CLI можно было писать
             // pixels, rows, columns или grid без учета регистра.

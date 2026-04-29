@@ -1,5 +1,9 @@
+package filter;
+
+import image.GrayImage;
+
 public class Convolution {
-    static GrayImage apply(GrayImage src, Kernel kernel) {
+    public static GrayImage apply(GrayImage src, Kernel kernel) {
         int width = src.width;
         int height = src.height;
 
@@ -26,11 +30,11 @@ public class Convolution {
         return new GrayImage(width, height, dst);
     }
 
-    static int computePixel(GrayImage src, Kernel kernel, int x, int y) {
+    public static int computePixel(GrayImage src, Kernel kernel, int x, int y) {
         return computePixel(src, kernel, x, y, kernel.width / 2, kernel.height / 2);
     }
 
-    static int computePixel(GrayImage src, Kernel kernel, int x, int y, int kernelCenterX, int kernelCenterY) {
+    public static int computePixel(GrayImage src, Kernel kernel, int x, int y, int kernelCenterX, int kernelCenterY) {
         int width = src.width;
         int height = src.height;
 

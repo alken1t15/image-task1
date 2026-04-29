@@ -1,5 +1,11 @@
+package parallel;
+
+import filter.Convolution;
+import filter.Kernel;
+import image.GrayImage;
+
 public class ParallelConvolution {
-    static GrayImage apply(GrayImage src, Kernel kernel, ParallelStrategy strategy, int threads) {
+    public static GrayImage apply(GrayImage src, Kernel kernel, ParallelStrategy strategy, int threads) {
         int width = src.width;
         int height = src.height;
 

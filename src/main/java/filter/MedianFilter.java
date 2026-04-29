@@ -1,5 +1,9 @@
+package filter;
+
+import image.GrayImage;
+
 public class MedianFilter {
-    static GrayImage apply(GrayImage src, int windowSize) {
+    public static GrayImage apply(GrayImage src, int windowSize) {
         // Проверяю, что размер окна корректный:
         // для median filter окно должно быть положительным и нечётным
         if (windowSize <= 0 || windowSize % 2 == 0) {
@@ -37,7 +41,7 @@ public class MedianFilter {
         return new GrayImage(width, height, dst);
     }
 
-    static int computePixel(GrayImage src, int x, int y, int radius, int[] window) {
+    public static int computePixel(GrayImage src, int x, int y, int radius, int[] window) {
         int idx = 0;
 
         // Собираю все пиксели из окна вокруг текущей точки (x, y).

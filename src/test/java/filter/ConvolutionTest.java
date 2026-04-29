@@ -1,3 +1,6 @@
+package filter;
+
+import image.GrayImage;
 import org.junit.jupiter.api.Test;
 
 import java.awt.image.BufferedImage;

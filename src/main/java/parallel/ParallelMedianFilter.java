@@ -1,5 +1,10 @@
+package parallel;
+
+import filter.MedianFilter;
+import image.GrayImage;
+
 public class ParallelMedianFilter {
-    static GrayImage apply(GrayImage src, int windowSize, ParallelStrategy strategy, int threads) {
+    public static GrayImage apply(GrayImage src, int windowSize, ParallelStrategy strategy, int threads) {
         // Проверяю размер окна так же, как в последовательной версии.
         if (windowSize <= 0 || windowSize % 2 == 0) {
             throw new IllegalArgumentException("Median window size must be positive and odd");

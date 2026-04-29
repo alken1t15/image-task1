@@ -1,3 +1,10 @@
+package parallel;
+
+import filter.Convolution;
+import filter.Kernel;
+import filter.Kernels;
+import filter.MedianFilter;
+import image.GrayImage;
 import org.junit.jupiter.api.Test;
 
 import java.util.Random;

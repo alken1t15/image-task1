@@ -1,11 +1,13 @@
-public class Kernel {
-    final int width;
-    final int height;
-    final double[] values;
-    final double factor;
-    final double bias;
+package filter;
 
-    Kernel(int width, int height, double[] values, double factor, double bias) {
+public class Kernel {
+    public final int width;
+    public final int height;
+    public final double[] values;
+    public final double factor;
+    public final double bias;
+
+    public Kernel(int width, int height, double[] values, double factor, double bias) {
         if (width % 2 == 0 || height % 2 == 0) {
             throw new IllegalArgumentException("Kernel sizes must be odd");
         }

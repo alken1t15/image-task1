@@ -1,3 +1,5 @@
+package image;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -7,7 +9,7 @@ import java.io.IOException;
 import java.util.Locale;
 
 public class ImageUtils {
-    static GrayImage loadGray(String path) throws IOException {
+    public static GrayImage loadGray(String path) throws IOException {
         BufferedImage input = ImageIO.read(new File(path));
         if (input == null) {
             throw new IOException("Unsupported image format: " + path);
@@ -36,7 +38,7 @@ public class ImageUtils {
         return new GrayImage(gray.getWidth(), gray.getHeight(), data);
     }
 
-    static void saveGray(GrayImage image, String path) throws IOException {
+    public static void saveGray(GrayImage image, String path) throws IOException {
         BufferedImage output = new BufferedImage(
                 image.width,
                 image.height,
