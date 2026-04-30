@@ -1,9 +1,9 @@
 package filter;
 
-import image.GrayImage;
+import image.ColorImage;
 
 public class MedianFilter {
-    public static GrayImage apply(GrayImage src, int windowSize) {
+    public static ColorImage apply(ColorImage src, int windowSize) {
         // Проверяю, что размер окна корректный:
         // для median filter беру только положительное и нечётное окно
         if (windowSize <= 0 || windowSize % 2 == 0) {
@@ -31,17 +31,18 @@ public class MedianFilter {
             for (int x = 0; x < width; x++) {
                 // Считаю медиану через общий метод, чтобы параллельная версия
                 // не дублировала правила обработки границ.
-                int median = computePixel(src, x, y, radius, window);
-
-                // Записываю медиану в результирующее изображение
-                dst[dstRowOffset + x] = (byte) median;
+                int dstOffset = (dstRowOffset + x) * ColorImage.CHANNELS;
+                for (int channel = 0; channel < ColorImage.CHANNELS; channel++) {
+                    int median = computePixel(src, x, y, channel, radius, window);
+                    dst[dstOffset + channel] = (byte) median;
+                }
             }
         }
 
-        return new GrayImage(width, height, dst);
+        return new ColorImage(width, height, dst);
     }
 
-    public static int computePixel(GrayImage src, int x, int y, int radius, int[] window) {
+    public static int computePixel(ColorImage src, int x, int y, int channel, int radius, int[] window) {
         int idx = 0;
 
         // Собираю все пиксели из окна вокруг текущей точки (x, y).
@@ -52,8 +53,7 @@ public class MedianFilter {
             for (int dx = -radius; dx <= radius; dx++) {
                 int sx = clamp(x + dx, 0, src.width - 1);
 
-                // Беру значение пикселя из исходного изображения и добавляю его в окно.
-                window[idx++] = src.data[sy * src.width + sx] & 0xFF;
+                window[idx++] = src.data[ColorImage.offset(src.width, sx, sy) + channel] & 0xFF;
             }
         }
 

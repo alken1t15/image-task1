@@ -1,13 +1,12 @@
 package filter;
 
-import image.GrayImage;
+import image.ColorImage;
 
 public class Convolution {
-    public static GrayImage apply(GrayImage src, Kernel kernel) {
+    public static ColorImage apply(ColorImage src, Kernel kernel) {
         int width = src.width;
         int height = src.height;
 
-        // В этот массив буду записывать результат свёртки
         byte[] dst = new byte[src.data.length];
 
         // Нахожу центр ядра.
@@ -21,20 +20,21 @@ public class Convolution {
             int dstRowOffset = y * width;
 
             for (int x = 0; x < width; x++) {
-                // Считаю один пиксель через общий метод, чтобы последовательная
-                // и параллельная версии использовали одинаковую математику.
-                dst[dstRowOffset + x] = (byte) computePixel(src, kernel, x, y, kernelCenterX, kernelCenterY);
+                int dstOffset = (dstRowOffset + x) * ColorImage.CHANNELS;
+                for (int channel = 0; channel < ColorImage.CHANNELS; channel++) {
+                    dst[dstOffset + channel] = (byte) computePixel(src, kernel, x, y, channel, kernelCenterX, kernelCenterY);
+                }
             }
         }
 
-        return new GrayImage(width, height, dst);
+        return new ColorImage(width, height, dst);
     }
 
-    public static int computePixel(GrayImage src, Kernel kernel, int x, int y) {
-        return computePixel(src, kernel, x, y, kernel.width / 2, kernel.height / 2);
+    public static int computePixel(ColorImage src, Kernel kernel, int x, int y, int channel) {
+        return computePixel(src, kernel, x, y, channel, kernel.width / 2, kernel.height / 2);
     }
 
-    public static int computePixel(GrayImage src, Kernel kernel, int x, int y, int kernelCenterX, int kernelCenterY) {
+    public static int computePixel(ColorImage src, Kernel kernel, int x, int y, int channel, int kernelCenterX, int kernelCenterY) {
         int width = src.width;
         int height = src.height;
 
@@ -53,8 +53,7 @@ public class Convolution {
             for (int kx = 0; kx < kernel.width; kx++) {
                 int sx = mod(x + kx - kernelCenterX, width);
 
-                // Беру яркость пикселя из исходного изображения.
-                int pixel = src.data[srcRowOffset + sx] & 0xFF;
+                int pixel = src.data[(srcRowOffset + sx) * ColorImage.CHANNELS + channel] & 0xFF;
 
                 // Добавляю вклад этого пикселя в итоговую сумму.
                 sum += pixel * kernel.values[kernelRowOffset + kx];

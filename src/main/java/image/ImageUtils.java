@@ -9,44 +9,49 @@ import java.io.IOException;
 import java.util.Locale;
 
 public class ImageUtils {
-    public static GrayImage loadGray(String path) throws IOException {
+    public static ColorImage loadColor(String path) throws IOException {
         BufferedImage input = ImageIO.read(new File(path));
         if (input == null) {
             throw new IOException("Unsupported image format: " + path);
         }
 
-        // Создаю новое изображение такого же размера, но уже в формате grayscale
-        BufferedImage gray = new BufferedImage(
+        // Перевожу изображение в стабильный RGB-формат без потери цвета.
+        BufferedImage rgb = new BufferedImage(
                 input.getWidth(),
                 input.getHeight(),
-                BufferedImage.TYPE_BYTE_GRAY
+                BufferedImage.TYPE_3BYTE_BGR
         );
 
-        // Перерисовываю исходное изображение в gray.
-        // За счет TYPE_BYTE_GRAY Java автоматически переводит его в оттенки серого.
-        Graphics2D g = gray.createGraphics();
+        Graphics2D g = rgb.createGraphics();
         try {
             g.drawImage(input, 0, 0, null);
         } finally {
-            // После работы освобождаю графический контекст.
             g.dispose();
         }
 
-        // Достаю сырые байты пикселей из grayscale-изображения
-        // clone() делаю, чтобы получить отдельную копию массива, а не ссылку на внутренний буфер BufferedImage
-        byte[] data = ((DataBufferByte) gray.getRaster().getDataBuffer()).getData().clone();
-        return new GrayImage(gray.getWidth(), gray.getHeight(), data);
+        byte[] bgr = ((DataBufferByte) rgb.getRaster().getDataBuffer()).getData();
+        byte[] data = new byte[bgr.length];
+        for (int i = 0; i < bgr.length; i += ColorImage.CHANNELS) {
+            data[i] = bgr[i + 2];
+            data[i + 1] = bgr[i + 1];
+            data[i + 2] = bgr[i];
+        }
+        return new ColorImage(rgb.getWidth(), rgb.getHeight(), data);
     }
 
-    public static void saveGray(GrayImage image, String path) throws IOException {
+    public static void saveColor(ColorImage image, String path) throws IOException {
         BufferedImage output = new BufferedImage(
                 image.width,
                 image.height,
-                BufferedImage.TYPE_BYTE_GRAY
+                BufferedImage.TYPE_3BYTE_BGR
         );
 
         byte[] dst = ((DataBufferByte) output.getRaster().getDataBuffer()).getData();
-        System.arraycopy(image.data, 0, dst, 0, image.data.length);
+        for (int i = 0; i < image.data.length; i += ColorImage.CHANNELS) {
+            dst[i] = image.data[i + 2];
+            dst[i + 1] = image.data[i + 1];
+            dst[i + 2] = image.data[i];
+        }
 
         String format = extractFormat(path);
         boolean ok = ImageIO.write(output, format, new File(path));
