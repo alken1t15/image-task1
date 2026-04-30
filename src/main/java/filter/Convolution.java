@@ -7,16 +7,15 @@ public class Convolution {
         int width = src.width;
         int height = src.height;
 
+        // Я создаю отдельный массив результата, чтобы исходное изображение оставалось неизменным.
         byte[] dst = new byte[src.data.length];
 
-        // Нахожу центр ядра.
-        // Например, для ядра 3x3 беру центр (1, 1), для 5x5 -> (2, 2)
+        // Я нахожу центр ядра: для 3x3 это (1, 1), для 5x5 это (2, 2).
         int kernelCenterX = kernel.width / 2;
         int kernelCenterY = kernel.height / 2;
 
-        // Прохожу по всем пикселям изображения
+        // Я прохожу по каждому пикселю и отдельно считаю каналы R, G и B.
         for (int y = 0; y < height; y++) {
-            // Здесь накапливаю сумму произведений пикселей на коэффициенты ядра
             int dstRowOffset = y * width;
 
             for (int x = 0; x < width; x++) {
@@ -38,41 +37,38 @@ public class Convolution {
         int width = src.width;
         int height = src.height;
 
-        // Здесь накапливаю сумму произведений пикселей на коэффициенты ядра.
+        // Здесь я накапливаю сумму произведений значений канала на коэффициенты ядра.
         double sum = 0.0;
 
         for (int ky = 0; ky < kernel.height; ky++) {
-            // Вычисляю координату пикселя в исходном изображении.
-            // mod использую для wrap-around обработки границ:
-            // если выхожу за край, "заворачиваюсь" на другую сторону изображения.
+            // Для границ я использую wrap-around: если выхожу за край, беру пиксель с другой стороны.
             int sy = mod(y + ky - kernelCenterY, height);
             int srcRowOffset = sy * width;
             int kernelRowOffset = ky * kernel.width;
 
-            // Прохожу по всем элементам ядра по x.
             for (int kx = 0; kx < kernel.width; kx++) {
                 int sx = mod(x + kx - kernelCenterX, width);
 
                 int pixel = src.data[(srcRowOffset + sx) * ColorImage.CHANNELS + channel] & 0xFF;
 
-                // Добавляю вклад этого пикселя в итоговую сумму.
+                // Я добавляю вклад текущего соседнего пикселя в итоговое значение канала.
                 sum += pixel * kernel.values[kernelRowOffset + kx];
             }
         }
 
-        // После свёртки применяю factor и bias.
+        // После свёртки я применяю factor и bias из описания ядра.
         int value = (int) Math.round(sum * kernel.factor + kernel.bias);
 
-        // Ограничиваю результат диапазоном допустимых значений яркости.
+        // Канал цвета должен остаться в диапазоне одного байта.
         return clamp(value, 0, 255);
     }
 
-    // Этим методом зажимаю число в допустимый диапазон.
+    // Этим методом я зажимаю число в допустимый диапазон.
     static int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
     }
 
-    // Этим методом корректно обрабатываю выход за границы изображения.
+    // Этим методом я корректно обрабатываю отрицательные координаты при wrap-around.
     static int mod(int value, int size) {
         return ((value % size) + size) % size;
     }

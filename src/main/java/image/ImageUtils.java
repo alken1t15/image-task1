@@ -10,12 +10,13 @@ import java.util.Locale;
 
 public class ImageUtils {
     public static ColorImage loadColor(String path) throws IOException {
+        // Я читаю исходный файл через ImageIO, чтобы поддерживать обычные форматы вроде PNG и JPG.
         BufferedImage input = ImageIO.read(new File(path));
         if (input == null) {
             throw new IOException("Unsupported image format: " + path);
         }
 
-        // Перевожу изображение в стабильный RGB-формат без потери цвета.
+        // Я перевожу изображение в стабильный 3-байтовый формат без потери цвета.
         BufferedImage rgb = new BufferedImage(
                 input.getWidth(),
                 input.getHeight(),
@@ -29,6 +30,7 @@ public class ImageUtils {
             g.dispose();
         }
 
+        // В BufferedImage каналы лежат как BGR, поэтому я перекладываю их в более понятный порядок RGB.
         byte[] bgr = ((DataBufferByte) rgb.getRaster().getDataBuffer()).getData();
         byte[] data = new byte[bgr.length];
         for (int i = 0; i < bgr.length; i += ColorImage.CHANNELS) {
@@ -40,6 +42,7 @@ public class ImageUtils {
     }
 
     public static void saveColor(ColorImage image, String path) throws IOException {
+        // Для сохранения я снова создаю BufferedImage в формате BGR, который хорошо поддерживается ImageIO.
         BufferedImage output = new BufferedImage(
                 image.width,
                 image.height,
@@ -47,6 +50,7 @@ public class ImageUtils {
         );
 
         byte[] dst = ((DataBufferByte) output.getRaster().getDataBuffer()).getData();
+        // Мой внутренний формат RGB, а BufferedImage ожидает BGR, поэтому меняю местами R и B.
         for (int i = 0; i < image.data.length; i += ColorImage.CHANNELS) {
             dst[i] = image.data[i + 2];
             dst[i + 1] = image.data[i + 1];
@@ -61,6 +65,7 @@ public class ImageUtils {
     }
 
     static String extractFormat(String path) {
+        // Формат вывода я беру из расширения файла, а если расширения нет, сохраняю как PNG.
         int dot = path.lastIndexOf('.');
         if (dot == -1 || dot == path.length() - 1) {
             return "png";

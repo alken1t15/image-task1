@@ -13,6 +13,7 @@ import java.util.Locale;
 public class Main {
 
     public static void main(String[] args) throws Exception {
+        // Я оставил только режимы первого задания: применение фильтра и последовательный benchmark.
         if (args.length < 1) {
             printUsage();
             return;
@@ -39,6 +40,7 @@ public class Main {
     }
 
     private static void apply(String inputPath, String outputPath, String filterName) throws IOException {
+        // Загружаю изображение один раз, а время измеряю только для самой фильтрации.
         ColorImage input = ImageUtils.loadColor(inputPath);
 
         long start = System.nanoTime();
@@ -53,6 +55,7 @@ public class Main {
     }
 
     private static void benchmark(String inputPath, String filterName, int iterations) throws IOException {
+        // В benchmark я не учитываю чтение файла: проверяю только скорость алгоритма фильтрации.
         ColorImage input = ImageUtils.loadColor(inputPath);
         long total = 0;
         int checksum = 0;
@@ -63,6 +66,7 @@ public class Main {
             long elapsed = System.nanoTime() - start;
 
             total += elapsed;
+            // Checksum я считаю, чтобы JVM не могла считать результат вычислений неиспользуемым.
             checksum += out.data[i % out.data.length] & 0xFF;
             System.out.printf(Locale.US, "Run %d: %.3f ms%n", i + 1, elapsed / 1_000_000.0);
         }
@@ -76,6 +80,7 @@ public class Main {
 
     private static ColorImage applyFilter(ColorImage input, String filterName) {
         String name = filterName.toLowerCase(Locale.ROOT);
+        // Median-фильтры я определяю по имени, потому что у них нет обычного ядра коэффициентов.
         if (name.startsWith("median")) {
             return MedianFilter.apply(input, parseMedianWindowSize(name));
         }
@@ -85,6 +90,7 @@ public class Main {
     }
 
     private static int parseMedianWindowSize(String name) {
+        // Размер окна беру из имени фильтра, чтобы CLI оставался простым.
         return switch (name) {
             case "median3" -> 3;
             case "median5" -> 5;
@@ -96,6 +102,7 @@ public class Main {
     }
 
     private static double throughput(ColorImage input, long elapsedNs) {
+        // Пропускную способность считаю в мегапикселях в секунду.
         double mpix = (double) input.width * input.height / 1_000_000.0;
         return mpix / (elapsedNs / 1_000_000_000.0);
     }
