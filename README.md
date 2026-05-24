@@ -9,7 +9,6 @@
 - `image` — загрузка, сохранение и хранение RGB-изображения
 - `filter` — последовательные фильтры, ядра свёртки и median filter
 - `app` — логика командной строки
-- `Main` в корне — совместимая точка входа
 
 Изображение хранится как массив RGB-байтов: на каждый пиксель приходится 3 канала. Фильтры применяются независимо к каналам `R`, `G` и `B`, поэтому результат остаётся цветным.
 
@@ -30,25 +29,25 @@ mvn clean package
 Применить фильтр:
 
 ```bash
-java -cp target/classes Main apply <input> <output> <filterName>
+java -cp target/classes app.Main apply <input> <output> <filterName>
 ```
 
 Пример:
 
 ```bash
-java -cp target/classes Main apply input.png output.png gaussian3
+java -cp target/classes app.Main apply input.png output.png gaussian3
 ```
 
 Замер производительности:
 
 ```bash
-java -cp target/classes Main benchmark <input> <filterName> <iterations>
+java -cp target/classes app.Main benchmark <input> <filterName> <iterations>
 ```
 
 Пример:
 
 ```bash
-java -cp target/classes Main benchmark input.png gaussian3 500
+java -cp target/classes app.Main benchmark input.png gaussian3 500
 ```
 
 ## Поддерживаемые фильтры
