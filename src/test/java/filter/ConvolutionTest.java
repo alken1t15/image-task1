@@ -11,6 +11,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ConvolutionTest {
 
+    /**
+     * Проверяет, что фильтр identity не изменяет изображение.
+     * Результат после обработки должен полностью совпадать с исходным изображением.
+     */
     @Test
     void identityShouldReturnSameImage() {
         ColorImage input = randomImage(17, 13, 42);
@@ -20,6 +24,11 @@ public class ConvolutionTest {
         assertImagesEqual(input, output);
     }
 
+    /**
+     * Проверяет, что ядро свёртки, состоящее только из нулей,
+     * превращает изображение в полностью чёрное.
+     * Все значения RGB-каналов должны стать равны 0.
+     */
     @Test
     void zeroKernelShouldProduceBlackImage() {
         ColorImage input = randomImage(9, 7, 123);
@@ -32,6 +41,11 @@ public class ConvolutionTest {
         }
     }
 
+    /**
+     * Проверяет, что после применения свёртки изображение сохраняет исходные размеры.
+     * Также проверяется, что длина массива RGB-данных соответствует формуле:
+     * ширина * высота * количество каналов.
+     */
     @Test
     void outputShouldKeepSameSizeAndRgbDataLength() {
         ColorImage input = randomImage(31, 19, 7);
@@ -43,6 +57,11 @@ public class ConvolutionTest {
         assertEquals(input.width * input.height * ColorImage.CHANNELS, output.data.length);
     }
 
+    /**
+     * Проверяет, что после применения разных фильтров значения пикселей
+     * остаются в допустимом диапазоне от 0 до 255.
+     * Это нужно, чтобы результат корректно представлял RGB-изображение.
+     */
     @Test
     void outputValuesShouldStayInRange0To255() {
         ColorImage input = randomImage(25, 25, 99);
@@ -58,6 +77,10 @@ public class ConvolutionTest {
         }
     }
 
+    /**
+     * Проверяет, что RGB-каналы изображения обрабатываются независимо.
+     * Значения красного, зелёного и синего каналов не должны смешиваться между собой.
+     */
     @Test
     void filtersShouldProcessRgbChannelsIndependently() {
         ColorImage input = new ColorImage(1, 1, new byte[]{10, 80, (byte) 200});
@@ -67,6 +90,11 @@ public class ConvolutionTest {
         assertArrayEquals(new byte[]{10, 80, (byte) 200}, output.data);
     }
 
+    /**
+     * Проверяет, что медианный фильтр не изменяет постоянное изображение.
+     * Если все пиксели имеют одинаковый цвет, результат должен совпадать
+     * с исходным изображением для разных размеров окна фильтра.
+     */
     @Test
     void medianOnConstantImageShouldReturnSameImage() {
         ColorImage input = constantImage(11, 8, 30, 120, 220);
@@ -78,6 +106,12 @@ public class ConvolutionTest {
         assertImagesEqual(input, output5);
     }
 
+    /**
+     * Проверяет, что медианный фильтр удаляет одиночный импульсный шум
+     * отдельно по каждому RGB-каналу.
+     * Испорченный центральный пиксель должен замениться нормальным значением
+     * из окружающей области.
+     */
     @Test
     void medianShouldRemoveSingleImpulseNoisePerChannel() {
         ColorImage input = constantImage(7, 7, 100, 110, 120);
@@ -94,6 +128,11 @@ public class ConvolutionTest {
         assertEquals(120, output.data[outCenter + 2] & 0xFF);
     }
 
+    /**
+     * Проверяет, что расширение ядра нулями не меняет результат свёртки.
+     * Ядро gaussian3 и эквивалентное ядро 5x5 с нулями по краям
+     * должны давать одинаковое изображение.
+     */
     @Test
     void paddingKernelWithZerosShouldNotChangeResult() {
         ColorImage input = randomImage(16, 12, 2024);
